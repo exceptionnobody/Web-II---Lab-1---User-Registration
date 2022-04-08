@@ -1,5 +1,7 @@
 package com.group12.server.entity
 
+import com.group12.server.dto.ActivationDTO
+import com.group12.server.dto.UserDTO
 import org.hibernate.annotations.GenericGenerator
 import java.util.*
 import javax.persistence.*
@@ -11,7 +13,7 @@ class Activation(
     @Column
     @GeneratedValue(generator = "uuid2")
     @GenericGenerator(name = "uuid2", strategy = "uuid2")
-    var provisionalID: UUID?,
+    var provisional_id: UUID?,
     @Column
     @OneToOne(mappedBy = "users")
     var user: User,
@@ -21,5 +23,5 @@ class Activation(
     var email : String,
     @Column
     var activationCode: Int,
-) {
-}
+)
+fun Activation.toDTO() = ActivationDTO(provisional_id?.toString()!!,email)
