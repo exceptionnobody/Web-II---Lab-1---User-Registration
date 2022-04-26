@@ -11,3 +11,8 @@ Repository for the Lab 3 assignment of the Web Applications II course at Polytec
 | s292522 | Ubertini | Pietro |
 
 ## Usage
+
+1. Pull the official postgres image:
+```docker pull postgres```
+2. Create and run Docker container:
+```docker run --name postgres -e POSTGRES_PASSWORD=postgres -d -p 54320:5432 -v Path\To\Project\Volume\Folder:/var/lib/postgres/data postgres```

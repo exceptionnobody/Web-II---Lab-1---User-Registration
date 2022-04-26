@@ -22,6 +22,7 @@ class Activation(
     @Column
     var attemptCounter:Int = 5,
     @Column(nullable = false)
+    @Temporal(value = TemporalType.TIMESTAMP)
     var deadline: Date,
 )
 fun Activation.toDTO() = ActivationDTO(provisional_id?.toString()!!,email)
