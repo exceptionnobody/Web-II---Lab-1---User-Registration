@@ -72,30 +72,56 @@ class UserServiceImpl: UserService {
         return ActivationDTO(savedActivation.provisionalId!!, activationCode)
     }
 
-    override fun completedReg(token: TokenDTO) : UserDTO? {
-        println(token.provisional_id)
-        val activation = activationRepository.findById(token.provisional_id).orElse(null)
-        if (activation == null) {
-            return null
-        }
-        if (activation.deadline.before(Date())) {
-            activationRepository.deleteById(token.provisional_id)
-            return null
-        }
-        if (activation.activationCode != token.activation_code) {
-            if (activation.attemptCounter == 0) {
-                val userId = activation.user.userId
-                activationRepository.deleteById(token.provisional_id)
-                userRepository.deleteById(userId!!)
-            } else {
-                activation.attemptCounter--
-                activationRepository.save(activation)
+    override fun completedReg(submittedToken: TokenDTO) : UserDTO? {
+
+        if(testFields(submittedToken.activation_code, submittedToken.provisional_id) ) {
+            val activation = activationRepository.findById(UUID.fromString(submittedToken.provisional_id)).orElse(null) ?: return null
+
+            if (activation.deadline.before(Date())) {
+                activationRepository.deleteById(UUID.fromString(submittedToken.provisional_id))
+                return null
             }
-            return null
+
+            if (activation.attemptCounter == 0) {
+                    val userId = activation.user.userId
+                    activationRepository.deleteById(UUID.fromString(submittedToken.provisional_id))
+                    userRepository.deleteById(userId!!)
+            } else {
+
+                if (activation.activationCode != submittedToken.activation_code) {
+                    activation.attemptCounter--
+                    activationRepository.save(activation)
+
+                    return null
+                }
+                val user = activation.user
+
+                user.validated = true
+                userRepository.save(user)
+
+                activationRepository.deleteById(UUID.fromString(submittedToken.provisional_id))
+
+                return UserDTO(user.userId!!, user.nickname, user.email)
+            }
+
         }
-        val user = activation.user
-        user.validated = true
-        userRepository.save(user)
-        return UserDTO(user.userId!!, user.nickname, user.email)
+        return null
     }
+
+    private fun testFields(activationCode: String, provisionalId: String): Boolean{
+        val reg = Regex("^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$")
+
+        var numeric = true
+
+        try {
+            activationCode.toLong()
+        } catch (e: NumberFormatException) {
+            numeric = false
+        }
+        if(numeric && reg.matches(provisionalId))
+            return true
+        return false
+    }
+
+
 }
