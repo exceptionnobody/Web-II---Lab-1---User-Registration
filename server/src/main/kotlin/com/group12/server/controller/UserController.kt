@@ -35,12 +35,10 @@ class UserController(val userService: UserServiceImpl) {
 
     @PostMapping("/user/validate")
     fun validate(@RequestBody body: TokenDTO): ResponseEntity<UserDTO> {
-
-        val tempuserdto = userService.completedReg(TokenDTO(body.provisional_id, body.activation_code))
-
-        return if (tempuserdto == null)
-                ResponseEntity(HttpStatus.NOT_FOUND)
-            else
-                ResponseEntity(tempuserdto, HttpStatus.CREATED)
-        }
+        val tempUserDto = userService.completedReg(TokenDTO(body.provisional_id, body.activation_code))
+        return if (tempUserDto == null)
+            ResponseEntity(HttpStatus.NOT_FOUND)
+        else
+            ResponseEntity(tempUserDto, HttpStatus.CREATED)
+    }
 }

@@ -16,8 +16,8 @@ import java.util.*
 @Service
 class UserServiceImpl: UserService {
 
-    private val activationCodeSize = 20
-    private val charPool : List<Char> = ('a'..'z') + ('A'..'Z') + ('0'..'9')
+    private val activationCodeSize = 6
+    private val charRange : CharRange = '0'..'9'
 
     @Autowired
     lateinit var emailService: EmailServiceImpl
@@ -55,10 +55,28 @@ class UserServiceImpl: UserService {
         return !userRepository.existsByNickname(nickname)
     }
 
+    override fun isValidProvisionalId(provisionalId: String): Boolean {
+        val reg = Regex("^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$")
+        if(!reg.matches(provisionalId))
+            return false
+        return true
+    }
+
+    override fun isValidActivationCode(activationCode: String) : Boolean {
+        if (activationCode.length != 6)
+            return false
+        try {
+            activationCode.toLong()
+        } catch (e: NumberFormatException) {
+            return false
+        }
+        return true
+    }
+
     override fun newActivationCode() : String {
         return (1..activationCodeSize)
-            .map { i -> kotlin.random.Random.nextInt(0, charPool.size) }
-            .map(charPool::get)
+            .map { _ -> kotlin.random.Random.nextInt(0, 10) }
+            .map(charRange::elementAt)
             .joinToString("")
     }
 
@@ -72,56 +90,32 @@ class UserServiceImpl: UserService {
         return ActivationDTO(savedActivation.provisionalId!!, activationCode)
     }
 
-    override fun completedReg(submittedToken: TokenDTO) : UserDTO? {
-
-        if(testFields(submittedToken.activation_code, submittedToken.provisional_id) ) {
-            val activation = activationRepository.findById(UUID.fromString(submittedToken.provisional_id)).orElse(null) ?: return null
-
-            if (activation.deadline.before(Date())) {
-                activationRepository.deleteById(UUID.fromString(submittedToken.provisional_id))
-                return null
-            }
-
+    override fun completedReg(token: TokenDTO) : UserDTO? {
+        if( !isValidActivationCode(token.activation_code) ||
+            !isValidProvisionalId(token.provisional_id) ) {
+            return null
+        }
+        val activation = activationRepository.findById(UUID.fromString(token.provisional_id)).orElse(null)
+        activation ?: return null
+        if (activation.deadline.before(Date())) {
+            activationRepository.deleteById(UUID.fromString(token.provisional_id))
+            return null
+        }
+        if (activation.activationCode != token.activation_code) {
             if (activation.attemptCounter == 0) {
-                    val userId = activation.user.userId
-                    activationRepository.deleteById(UUID.fromString(submittedToken.provisional_id))
-                    userRepository.deleteById(userId!!)
+                val userId = activation.user.userId
+                activationRepository.deleteById(UUID.fromString(token.provisional_id))
+                userRepository.deleteById(userId!!)
             } else {
-
-                if (activation.activationCode != submittedToken.activation_code) {
-                    activation.attemptCounter--
-                    activationRepository.save(activation)
-
-                    return null
-                }
-                val user = activation.user
-
-                user.validated = true
-                userRepository.save(user)
-
-                activationRepository.deleteById(UUID.fromString(submittedToken.provisional_id))
-
-                return UserDTO(user.userId!!, user.nickname, user.email)
+                activation.attemptCounter--
+                activationRepository.save(activation)
             }
-
+            return null
         }
-        return null
+        val user = activation.user
+        user.validated = true
+        userRepository.save(user)
+        activationRepository.deleteById(UUID.fromString(token.provisional_id))
+        return UserDTO(user.userId!!, user.nickname, user.email)
     }
-
-    private fun testFields(activationCode: String, provisionalId: String): Boolean{
-        val reg = Regex("^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$")
-
-        var numeric = true
-
-        try {
-            activationCode.toLong()
-        } catch (e: NumberFormatException) {
-            numeric = false
-        }
-        if(numeric && reg.matches(provisionalId))
-            return true
-        return false
-    }
-
-
 }

@@ -13,7 +13,7 @@ class User(
     @Column(nullable = false)
     var password: String,
     @Column(nullable = false)
-    var validated: Boolean=false,
+    var validated: Boolean = false,
 ) {
     @Id
     @Column

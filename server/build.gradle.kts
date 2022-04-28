@@ -27,6 +27,14 @@ dependencies {
 	implementation("org.hibernate.validator:hibernate-validator:7.0.4.Final")
 	runtimeOnly("org.postgresql:postgresql")
 	testImplementation("org.springframework.boot:spring-boot-starter-test")
+	testImplementation ("org.testcontainers:junit-jupiter:1.16.3")
+	testImplementation("org.testcontainers:postgresql:1.16.3")
+}
+
+dependencyManagement {
+	imports {
+		mavenBom("org.testcontainers:testcontainers-bom:1.16.3")
+	}
 }
 
 tasks.withType<KotlinCompile> {

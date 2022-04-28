@@ -15,18 +15,18 @@ class EmailServiceImpl : EmailService {
     @Autowired
     lateinit var emailSender: JavaMailSender
 
-    override fun sendEmail(receiverEmail: String, receiverNickname: String, activationCode: String) {
+    override fun sendEmail(receiverEmail: String, receiverNickname: String, activationCode: String) : SimpleMailMessage {
         val message = SimpleMailMessage()
         message.setFrom(senderName)
         message.setTo(receiverEmail)
         message.setSubject("Verify your account")
         message.setText("Dear $receiverNickname,\n" +
                         "Your activation code is: $activationCode\n" +
-                        "It will be valid for the next 24 hours.\n" +
-                        "You can use it to complete your registration.\n" +
+                        "Use it within the next 24 hours to complete your registration.\n" +
                         "Have a nice day!\n\n" +
                         "- Group 12")
         emailSender.send(message)
+        return message
     }
 
 }
