@@ -20,6 +20,7 @@ import org.springframework.test.context.DynamicPropertySource
 import org.testcontainers.containers.PostgreSQLContainer
 import org.testcontainers.junit.jupiter.Container
 import org.testcontainers.junit.jupiter.Testcontainers
+import java.util.concurrent.atomic.AtomicInteger
 
 @Testcontainers
 @SpringBootTest(webEnvironment= SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -58,6 +59,17 @@ class IntegrationTests {
         val wrongRes = restTemplate.postForEntity<ActivationDTO>("$baseUrl/user/register", wrongReq)
         assert(wrongRes.statusCode == HttpStatus.BAD_REQUEST)
 
+        // sends a request with a wrong email
+        val wrongReq1 = HttpEntity(RegistrationDTO("somename", "1234","meemail"))
+        val wrongRes1 = restTemplate.postForEntity<Unit>("$baseUrl/user/register", wrongReq1)
+        assert(wrongRes1.statusCode == HttpStatus.BAD_REQUEST)
+
+
+        // sends a request with a empty nickname
+        val wrongReq2 = HttpEntity(RegistrationDTO("", "1234","meemail"))
+        val wrongRes2 = restTemplate.postForEntity<Unit>("$baseUrl/user/register", wrongReq2)
+        assert(wrongRes2.statusCode == HttpStatus.BAD_REQUEST)
+
         // sends a request with a strong password
         val rightReq = HttpEntity(RegistrationDTO("somename", "Secret!Password1","me@email.com"))
         val rightRes = restTemplate.postForEntity<ActivationDTO>("$baseUrl/user/register", rightReq)
@@ -92,5 +104,29 @@ class IntegrationTests {
 
         // deletes the one remaining record from the db
         userRepository.deleteById(rightRes.body!!.userId)
+    }
+
+    @Test
+    fun rateLimiterTests() {
+        val baseUrl = "http://localhost:$port"
+        val countWrong = AtomicInteger()
+        val count  = AtomicInteger()
+        // Testing wrong request because it is faster
+        val wrongReq = HttpEntity(RegistrationDTO("somename", "1234","me@email.com"))
+        val tl = mutableListOf<Thread>()
+        for(i in 1..16) {
+            tl.add(Thread{
+                val wrongRes = restTemplate.postForEntity<Unit>("$baseUrl/user/register", wrongReq)
+                if(wrongRes.statusCode == HttpStatus.TOO_MANY_REQUESTS)
+                    countWrong.incrementAndGet()
+                else
+                    count.incrementAndGet()
+            })
+        }
+        tl.forEach { it.start() }
+        tl.forEach { it.join() }
+        assert(count.get()==10)
+        assert(countWrong.get()==6)
+
     }
 }
