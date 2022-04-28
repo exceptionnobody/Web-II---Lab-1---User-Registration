@@ -1,0 +1,15 @@
+package com.group12.server.service
+
+import com.group12.server.dto.ActivationDTO
+import com.group12.server.dto.RegistrationDTO
+import com.group12.server.dto.TokenDTO
+import com.group12.server.dto.UserDTO
+
+interface UserService {
+    fun isValidPwd(pwd: String) : Boolean
+    fun isValidEmail(email: String) : Boolean
+    fun isValidNickname(nickname: String) : Boolean
+    fun newActivationCode() : String
+    fun userReg(newUser: RegistrationDTO): ActivationDTO
+    fun completedReg(submittedToken: TokenDTO) : UserDTO?
+}

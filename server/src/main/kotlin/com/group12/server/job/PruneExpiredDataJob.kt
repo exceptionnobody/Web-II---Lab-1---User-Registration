@@ -22,7 +22,7 @@ class PruneExpiredDataJob {
             it.deadline.before(java.sql.Timestamp.valueOf(LocalDateTime.now()))
         }
         expiredRows.forEach {
-            activationRepository.deleteById(it.provisional_id!!)
+            activationRepository.deleteById(it.provisionalId!!)
             userRepository.deleteById(it.user.userId!!)
         }
     }
