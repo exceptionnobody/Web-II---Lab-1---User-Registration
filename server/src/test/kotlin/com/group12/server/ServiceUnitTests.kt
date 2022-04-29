@@ -204,7 +204,7 @@ class ServiceUnitTests {
 
     @Test
     fun sendEmailTest() {
-        val email = "marco.ballario1997@gmail.com"
+        val email = "me@email.com"
         val nickname = "somename"
         val activationCode = "123456"
 
