@@ -61,19 +61,18 @@ class IntegrationTests {
 
         // sends a request with a wrong email
         val wrongReq1 = HttpEntity(RegistrationDTO("somename", "1234","meemail"))
-        val wrongRes1 = restTemplate.postForEntity<Unit>("$baseUrl/user/register", wrongReq1)
+        val wrongRes1 = restTemplate.postForEntity<ActivationDTO>("$baseUrl/user/register", wrongReq1)
         assert(wrongRes1.statusCode == HttpStatus.BAD_REQUEST)
-
 
         // sends a request with a empty nickname
         val wrongReq2 = HttpEntity(RegistrationDTO("", "1234","meemail"))
-        val wrongRes2 = restTemplate.postForEntity<Unit>("$baseUrl/user/register", wrongReq2)
+        val wrongRes2 = restTemplate.postForEntity<ActivationDTO>("$baseUrl/user/register", wrongReq2)
         assert(wrongRes2.statusCode == HttpStatus.BAD_REQUEST)
 
         // sends a request with a strong password
         val rightReq = HttpEntity(RegistrationDTO("somename", "Secret!Password1","me@email.com"))
         val rightRes = restTemplate.postForEntity<ActivationDTO>("$baseUrl/user/register", rightReq)
-        assert(rightRes.statusCode == HttpStatus.OK)
+        assert(rightRes.statusCode == HttpStatus.ACCEPTED)
 
         // deletes created records from the db
         val act = activationRepository.findById(rightRes.body!!.provisional_id).get()
@@ -94,7 +93,7 @@ class IntegrationTests {
         // registers a user in the db
         val registerReq = HttpEntity(RegistrationDTO("somename", "Secret!Password1","me@email.com"))
         val registerRes = restTemplate.postForEntity<ActivationDTO>("$baseUrl/user/register", registerReq)
-        assert(registerRes.statusCode == HttpStatus.OK)
+        assert(registerRes.statusCode == HttpStatus.ACCEPTED)
 
         // sends a request with correct provisional id and activation code
         val activationCode = activationRepository.findById(registerRes.body!!.provisional_id).get().activationCode
@@ -111,7 +110,8 @@ class IntegrationTests {
         val baseUrl = "http://localhost:$port"
         val countWrong = AtomicInteger()
         val count  = AtomicInteger()
-        // Testing wrong request because it is faster
+
+        // tests wrong requests because are faster
         val wrongReq = HttpEntity(RegistrationDTO("somename", "1234","me@email.com"))
         val tl = mutableListOf<Thread>()
         for(i in 1..16) {
@@ -127,6 +127,5 @@ class IntegrationTests {
         tl.forEach { it.join() }
         assert(count.get()==10)
         assert(countWrong.get()==6)
-
     }
 }

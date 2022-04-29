@@ -87,12 +87,11 @@ class UserServiceImpl: UserService {
         val tempActivation = Activation(savedUser, newUser.email, activationCode)
         val savedActivation = activationRepository.save(tempActivation)
         emailService.sendEmail(newUser.email, newUser.nickname, activationCode)
-        return ActivationDTO(savedActivation.provisionalId!!, activationCode)
+        return ActivationDTO(savedActivation.provisionalId!!, newUser.email)
     }
 
     override fun completedReg(token: TokenDTO) : UserDTO? {
-        if( !isValidActivationCode(token.activation_code) ||
-            !isValidProvisionalId(token.provisional_id) ) {
+        if( !isValidProvisionalId(token.provisional_id) ) {
             return null
         }
         val activation = activationRepository.findById(UUID.fromString(token.provisional_id)).orElse(null)
@@ -101,8 +100,9 @@ class UserServiceImpl: UserService {
             activationRepository.deleteById(UUID.fromString(token.provisional_id))
             return null
         }
-        if (activation.activationCode != token.activation_code) {
-            if (activation.attemptCounter == 0) {
+        if (!isValidActivationCode(token.activation_code) ||
+            activation.activationCode != token.activation_code) {
+            if (activation.attemptCounter == 1) {
                 val userId = activation.user.userId
                 activationRepository.deleteById(UUID.fromString(token.provisional_id))
                 userRepository.deleteById(userId!!)

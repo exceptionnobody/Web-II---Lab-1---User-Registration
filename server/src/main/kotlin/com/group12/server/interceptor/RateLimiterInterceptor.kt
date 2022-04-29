@@ -4,13 +4,11 @@ import io.github.bucket4j.Bandwidth
 import io.github.bucket4j.Bucket
 import io.github.bucket4j.ConsumptionProbe
 import io.github.bucket4j.Refill
-import org.springframework.context.annotation.Bean
 import org.springframework.http.HttpStatus
 import org.springframework.web.servlet.handler.HandlerInterceptorAdapter
 import java.time.Duration
 import javax.servlet.http.HttpServletRequest
 import javax.servlet.http.HttpServletResponse
-
 
 class RateLimiterInterceptor() : HandlerInterceptorAdapter() {
     private val refill = Refill.intervally(10,Duration.ofSeconds(1))

@@ -13,5 +13,5 @@ interface UserService {
     fun isValidActivationCode(activationCode: String) : Boolean
     fun newActivationCode() : String
     fun userReg(newUser: RegistrationDTO): ActivationDTO
-    fun completedReg(submittedToken: TokenDTO) : UserDTO?
+    fun completedReg(token: TokenDTO) : UserDTO?
 }

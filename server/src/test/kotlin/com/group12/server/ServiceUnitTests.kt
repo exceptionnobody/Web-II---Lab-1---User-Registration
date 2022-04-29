@@ -11,7 +11,6 @@ import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase
 import org.springframework.boot.test.context.SpringBootTest
-import org.springframework.boot.web.server.LocalServerPort
 import org.springframework.test.context.DynamicPropertyRegistry
 import org.springframework.test.context.DynamicPropertySource
 import org.testcontainers.containers.PostgreSQLContainer
@@ -36,8 +35,7 @@ class ServiceUnitTests {
             registry.add("spring.jpa.hibernate.ddl-auto") {"create-drop"}
         }
     }
-    @LocalServerPort
-    protected var port: Int = 0
+
     @Autowired
     lateinit var userRepository: UserRepository
     @Autowired
@@ -190,10 +188,10 @@ class ServiceUnitTests {
         val act = userService.userReg(reg)
 
         // Submits five wrong activation codes
-        val activationCode = "123456"
+        val activationCode = "abcdef"
         val tok = TokenDTO(act.provisional_id.toString(), activationCode)
         val userId = activationRepository.findById(act.provisional_id).get().user.userId!!
-        for (i in 4 downTo 0) {
+        for (i in 4 downTo 1) {
             val res = userService.completedReg(tok)
             val attempts = activationRepository.findById(act.provisional_id).get().attemptCounter
             Assertions.assertNull(res)

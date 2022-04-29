@@ -30,7 +30,7 @@ class UserController(val userService: UserServiceImpl) {
             return ResponseEntity(HttpStatus.BAD_REQUEST)
         val reg = RegistrationDTO(body.nickname, body.password, body.email)
         val res = userService.userReg(reg)
-        return ResponseEntity(res, HttpStatus.OK)
+        return ResponseEntity(res, HttpStatus.ACCEPTED)
     }
 
     @PostMapping("/user/validate")

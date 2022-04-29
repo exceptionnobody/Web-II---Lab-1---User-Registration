@@ -1,13 +1,9 @@
 package com.group12.server.dto
 
-
-
-
 import javax.validation.constraints.Email
 import javax.validation.constraints.NotEmpty
 import javax.validation.constraints.NotNull
 import javax.validation.constraints.Size
-
 
 data class RegistrationDTO(
         @field:NotEmpty  @field:NotNull val nickname: String,
