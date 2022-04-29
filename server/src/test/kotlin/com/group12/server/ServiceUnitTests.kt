@@ -173,9 +173,7 @@ class ServiceUnitTests {
         val res = userService.completedReg(tok)
         Assertions.assertNull(res)
         Assertions.assertTrue(activationRepository.findById(act.provisional_id).isEmpty)
-
-        // deletes registration from the db
-        userRepository.deleteById(actEntity.user.userId!!)
+        Assertions.assertFalse(userRepository.existsByEmail(act.email))
     }
 
     @Test

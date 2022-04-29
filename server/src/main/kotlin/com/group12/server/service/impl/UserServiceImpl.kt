@@ -6,6 +6,7 @@ import com.group12.server.dto.TokenDTO
 import com.group12.server.dto.UserDTO
 import com.group12.server.entity.Activation
 import com.group12.server.entity.User
+import com.group12.server.entity.toDTO
 import com.group12.server.repository.ActivationRepository
 import com.group12.server.repository.UserRepository
 import com.group12.server.service.UserService
@@ -87,7 +88,7 @@ class UserServiceImpl: UserService {
         val tempActivation = Activation(savedUser, newUser.email, activationCode)
         val savedActivation = activationRepository.save(tempActivation)
         emailService.sendEmail(newUser.email, newUser.nickname, activationCode)
-        return ActivationDTO(savedActivation.provisionalId!!, newUser.email)
+        return savedActivation.toDTO()
     }
 
     override fun completedReg(token: TokenDTO) : UserDTO? {
@@ -98,6 +99,7 @@ class UserServiceImpl: UserService {
         activation ?: return null
         if (activation.deadline.before(Date())) {
             activationRepository.deleteById(UUID.fromString(token.provisional_id))
+            userRepository.deleteById(activation.user.userId!!)
             return null
         }
         if (!isValidActivationCode(token.activation_code) ||
@@ -116,6 +118,6 @@ class UserServiceImpl: UserService {
         user.validated = true
         userRepository.save(user)
         activationRepository.deleteById(UUID.fromString(token.provisional_id))
-        return UserDTO(user.userId!!, user.nickname, user.email)
+        return user.toDTO()
     }
 }
