@@ -48,9 +48,7 @@ class UserController(val userService: UserServiceImpl) {
             return ResponseEntity(HttpStatus.BAD_REQUEST)
         }
         else {
-            val cookie = Cookie("user_jwt",token)
-            cookie.isHttpOnly=true
-            response.addCookie(cookie)
+            response.addHeader("Authorization", "Bearer $token");
             return ResponseEntity(token, HttpStatus.OK)
         }
     }
