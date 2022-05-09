@@ -1,25 +1,30 @@
 package com.group12.server.service.impl
 
-import com.group12.server.dto.ActivationDTO
-import com.group12.server.dto.RegistrationDTO
-import com.group12.server.dto.TokenDTO
-import com.group12.server.dto.UserDTO
+import com.group12.server.dto.*
 import com.group12.server.entity.Activation
 import com.group12.server.entity.User
 import com.group12.server.entity.toDTO
 import com.group12.server.repository.ActivationRepository
 import com.group12.server.repository.UserRepository
+import com.group12.server.security.Role
 import com.group12.server.service.UserService
+import io.jsonwebtoken.Jwts
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.beans.factory.annotation.Value
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
 import org.springframework.stereotype.Service
 import java.util.*
+import javax.crypto.SecretKey
 
 @Service
 class UserServiceImpl: UserService {
 
     private val activationCodeSize = 6
     private val charRange : CharRange = '0'..'9'
-
+    @Autowired
+    lateinit var secretKey: SecretKey
+    @Autowired
+    lateinit var passwordEncoder : BCryptPasswordEncoder
     @Autowired
     lateinit var emailService: EmailServiceImpl
     @Autowired
@@ -82,7 +87,8 @@ class UserServiceImpl: UserService {
     }
 
     override fun userReg(newUser: RegistrationDTO): ActivationDTO {
-        val tempUser = User(newUser.email, newUser.nickname, newUser.password, false)
+        val password = passwordEncoder.encode(newUser.password)
+        val tempUser = User(newUser.email, newUser.nickname, password, false,Role.CUSTOMER)
         val savedUser = userRepository.save(tempUser)
         val activationCode = newActivationCode()
         val tempActivation = Activation(savedUser, newUser.email, activationCode)
@@ -119,5 +125,17 @@ class UserServiceImpl: UserService {
         userRepository.save(user)
         activationRepository.deleteById(UUID.fromString(token.provisional_id))
         return user.toDTO()
+    }
+
+    override fun login(credentials: LoginDTO): String? {
+        val user = userRepository.findByNickname(credentials.username)
+        if(user!=null && passwordEncoder.matches(credentials.password,user.password)){
+            val now = Calendar.getInstance()
+            val exp = Calendar.getInstance()
+            exp.add(Calendar.HOUR,1)
+            val claims = mapOf<String,Any>("sub" to user.nickname, "exp" to exp.time,"iat" to now.time, "roles" to user.role)
+            return Jwts.builder().setClaims(claims).signWith(secretKey).compact()
+        }
+        return null
     }
 }

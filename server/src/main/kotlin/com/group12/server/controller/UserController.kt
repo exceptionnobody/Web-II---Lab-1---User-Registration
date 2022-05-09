@@ -1,9 +1,6 @@
 package com.group12.server.controller
 
-import com.group12.server.dto.ActivationDTO
-import com.group12.server.dto.RegistrationDTO
-import com.group12.server.dto.TokenDTO
-import com.group12.server.dto.UserDTO
+import com.group12.server.dto.*
 import com.group12.server.service.impl.UserServiceImpl
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
@@ -11,6 +8,8 @@ import org.springframework.validation.BindingResult
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RestController
+import javax.servlet.http.Cookie
+import javax.servlet.http.HttpServletResponse
 import javax.validation.Valid
 
 @RestController
@@ -40,5 +39,19 @@ class UserController(val userService: UserServiceImpl) {
             ResponseEntity(HttpStatus.NOT_FOUND)
         else
             ResponseEntity(tempUserDto, HttpStatus.CREATED)
+    }
+    @PostMapping("/user/login")
+    fun login(@RequestBody credentials: LoginDTO, response: HttpServletResponse) : ResponseEntity<String> {
+        val token : String? = userService.login(credentials)
+        if (token == null)
+        {
+            return ResponseEntity(HttpStatus.BAD_REQUEST)
+        }
+        else {
+            val cookie = Cookie("user_jwt",token)
+            cookie.isHttpOnly=true
+            response.addCookie(cookie)
+            return ResponseEntity(token, HttpStatus.OK)
+        }
     }
 }

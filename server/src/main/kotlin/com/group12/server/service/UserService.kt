@@ -1,9 +1,6 @@
 package com.group12.server.service
 
-import com.group12.server.dto.ActivationDTO
-import com.group12.server.dto.RegistrationDTO
-import com.group12.server.dto.TokenDTO
-import com.group12.server.dto.UserDTO
+import com.group12.server.dto.*
 
 interface UserService {
     fun isValidPwd(pwd: String) : Boolean
@@ -14,4 +11,5 @@ interface UserService {
     fun newActivationCode() : String
     fun userReg(newUser: RegistrationDTO): ActivationDTO
     fun completedReg(token: TokenDTO) : UserDTO?
+    fun login(credentials : LoginDTO) : String?
 }

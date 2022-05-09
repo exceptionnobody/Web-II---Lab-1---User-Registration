@@ -1,6 +1,7 @@
 package com.group12.server.entity
 
 import com.group12.server.dto.UserDTO
+import com.group12.server.security.Role
 import javax.persistence.*
 
 @Entity
@@ -14,6 +15,8 @@ class User(
     var password: String,
     @Column(nullable = false)
     var validated: Boolean = false,
+    @Column(nullable = false)
+    var role : Role,
 ) {
     @Id
     @Column
