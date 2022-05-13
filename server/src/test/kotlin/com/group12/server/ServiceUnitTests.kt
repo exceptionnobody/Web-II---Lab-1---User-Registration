@@ -1,11 +1,15 @@
 package com.group12.server
 
+import com.group12.server.dto.LoginDTO
 import com.group12.server.dto.RegistrationDTO
 import com.group12.server.dto.TokenDTO
+import com.group12.server.entity.User
 import com.group12.server.repository.ActivationRepository
 import com.group12.server.repository.UserRepository
+import com.group12.server.security.Role
 import com.group12.server.service.impl.EmailServiceImpl
 import com.group12.server.service.impl.UserServiceImpl
+import io.jsonwebtoken.Jwts
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -17,6 +21,7 @@ import org.testcontainers.containers.PostgreSQLContainer
 import org.testcontainers.junit.jupiter.Container
 import org.testcontainers.junit.jupiter.Testcontainers
 import java.util.*
+import javax.crypto.SecretKey
 
 @Testcontainers
 @SpringBootTest(webEnvironment=SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -44,6 +49,8 @@ class ServiceUnitTests {
     lateinit var userService: UserServiceImpl
     @Autowired
     lateinit var emailService: EmailServiceImpl
+    @Autowired
+    lateinit var secretKey: SecretKey
 
     @Test
     fun isValidPwdTest() {
@@ -198,6 +205,25 @@ class ServiceUnitTests {
         Assertions.assertNull(userService.completedReg(tok))
         Assertions.assertTrue(activationRepository.findById(act.provisional_id).isEmpty)
         Assertions.assertTrue(userRepository.findById(userId).isEmpty)
+    }
+
+    @Test
+    fun loginTest() {
+        val email = "me@email.com"
+        val nickname = "somename"
+        val password = "Simple1Password!"
+        var user= User(email,nickname, password,true,Role.CUSTOMER)
+        user= userRepository.save(user)
+        // sends email and checks its content
+        val token = userService.login(nickname, password )
+        assert(token!=null)
+        val jwtParser = Jwts.parserBuilder().setSigningKey(secretKey).build()
+        val userId =  jwtParser.parseClaimsJws(token).body.subject
+        assert(userId == user.nickname)
+        val tokenNull = userService.login(nickname, "Simple1Password£" )
+        assert(tokenNull==null)
+        val tokenNull2 = userService.login("samename", password )
+        assert(tokenNull2==null)
     }
 
     @Test

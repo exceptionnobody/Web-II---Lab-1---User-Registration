@@ -10,7 +10,6 @@ import com.group12.server.security.Role
 import com.group12.server.service.UserService
 import io.jsonwebtoken.Jwts
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.beans.factory.annotation.Value
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
 import org.springframework.stereotype.Service
 import java.util.*
@@ -127,13 +126,13 @@ class UserServiceImpl: UserService {
         return user.toDTO()
     }
 
-    override fun login(credentials: LoginDTO): String? {
-        val user = userRepository.findByNickname(credentials.username)
-        if(user!=null && passwordEncoder.matches(credentials.password,user.password)){
+    override fun login(username:String,password:String): String? {
+        val user = userRepository.findByNickname(username)
+        if(user!=null && passwordEncoder.matches(password,user.password)){
             val now = Calendar.getInstance()
             val exp = Calendar.getInstance()
             exp.add(Calendar.HOUR,1)
-            val claims = mapOf<String,Any>("sub" to user.nickname, "exp" to exp.time,"iat" to now.time, "roles" to user.role)
+            val claims = mapOf<String,Any>("sub" to user.nickname, "exp" to exp.time,"iat" to now.time, "roles" to listOf(user.role))
             return Jwts.builder().setClaims(claims).signWith(secretKey).compact()
         }
         return null
