@@ -2,18 +2,23 @@ package com.group12.server.controller
 
 import com.group12.server.dto.*
 import com.group12.server.service.impl.UserServiceImpl
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.validation.BindingResult
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RestController
-import javax.servlet.http.Cookie
 import javax.servlet.http.HttpServletResponse
 import javax.validation.Valid
 
 @RestController
 class UserController(val userService: UserServiceImpl) {
+
+    @Value("\${http.header.name}")
+    lateinit var httpHeaderName: String
+    @Value("\${bearer.prefix}")
+    lateinit var bearerPrefix: String
 
     @PostMapping("/user/register")
     fun register(
@@ -47,7 +52,7 @@ class UserController(val userService: UserServiceImpl) {
         return if (token == null) {
              ResponseEntity(HttpStatus.BAD_REQUEST)
         } else {
-            response.addHeader("Authorization", "Bearer $token");
+            response.addHeader(httpHeaderName, bearerPrefix + token)
             ResponseEntity(token, HttpStatus.OK)
         }
     }

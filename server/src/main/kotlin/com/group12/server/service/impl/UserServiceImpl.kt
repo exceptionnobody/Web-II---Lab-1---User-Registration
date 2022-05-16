@@ -10,6 +10,7 @@ import com.group12.server.security.Role
 import com.group12.server.service.UserService
 import io.jsonwebtoken.Jwts
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
 import org.springframework.stereotype.Service
 import java.util.*
@@ -19,7 +20,7 @@ import javax.crypto.SecretKey
 class UserServiceImpl: UserService {
 
     private val activationCodeSize = 6
-    private val charRange : CharRange = '0'..'9'
+    private val charRange: CharRange = '0'..'9'
     @Autowired
     lateinit var secretKey: SecretKey
     @Autowired
@@ -30,6 +31,8 @@ class UserServiceImpl: UserService {
     lateinit var userRepository: UserRepository
     @Autowired
     lateinit var activationRepository: ActivationRepository
+    @Value("\${token.duration.hours}")
+    var tokenDurationHours: Int? = null
 
     // Returns true if the password is valid, false otherwise
     override fun isValidPwd(pwd: String) : Boolean{
@@ -131,8 +134,8 @@ class UserServiceImpl: UserService {
         if (user!=null && passwordEncoder.matches(password, user.password)) {
             val now = Calendar.getInstance()
             val exp = Calendar.getInstance()
-            exp.add(Calendar.HOUR,1)
-            val claims = mapOf<String,Any>("sub" to user.nickname, "exp" to exp.time,"iat" to now.time, "roles" to listOf(user.role))
+            exp.add(Calendar.HOUR, tokenDurationHours!!)
+            val claims = mapOf<String,Any>("sub" to user.nickname, "exp" to exp.time, "iat" to now.time, "roles" to listOf(user.role))
             return Jwts.builder().setClaims(claims).signWith(secretKey).compact()
         }
         return null
