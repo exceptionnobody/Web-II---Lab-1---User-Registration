@@ -126,9 +126,9 @@ class UserServiceImpl: UserService {
         return user.toDTO()
     }
 
-    override fun login(username:String,password:String): String? {
+    override fun login(username:String, password:String): String? {
         val user = userRepository.findByNickname(username)
-        if(user!=null && passwordEncoder.matches(password,user.password)){
+        if (user!=null && passwordEncoder.matches(password, user.password)) {
             val now = Calendar.getInstance()
             val exp = Calendar.getInstance()
             exp.add(Calendar.HOUR,1)

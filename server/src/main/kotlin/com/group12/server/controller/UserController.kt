@@ -40,14 +40,13 @@ class UserController(val userService: UserServiceImpl) {
         else
             ResponseEntity(tempUserDto, HttpStatus.CREATED)
     }
+
     @PostMapping("/user/login")
     fun login(@RequestBody credentials: LoginDTO, response: HttpServletResponse) : ResponseEntity<String> {
-        val token : String? = userService.login(credentials.username,credentials.password)
-        return if (token == null)
-        {
+        val token : String? = userService.login(credentials.username, credentials.password)
+        return if (token == null) {
              ResponseEntity(HttpStatus.BAD_REQUEST)
-        }
-        else {
+        } else {
             response.addHeader("Authorization", "Bearer $token");
             ResponseEntity(token, HttpStatus.OK)
         }

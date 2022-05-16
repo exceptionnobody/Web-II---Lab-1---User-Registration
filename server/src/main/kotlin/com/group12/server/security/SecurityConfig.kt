@@ -7,16 +7,12 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
 
-
 @Configuration
 @EnableWebSecurity
 class SecurityConfig : WebSecurityConfigurerAdapter(){
     @Bean
     fun  encoder(): BCryptPasswordEncoder = BCryptPasswordEncoder()
     override fun configure(http: HttpSecurity) {
-        http.csrf().disable().authorizeRequests().anyRequest().permitAll();
-
+        http.csrf().disable().authorizeRequests().anyRequest().permitAll()
     }
-
-
 }
