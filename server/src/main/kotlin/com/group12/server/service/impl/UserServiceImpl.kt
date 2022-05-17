@@ -2,9 +2,11 @@ package com.group12.server.service.impl
 
 import com.group12.server.dto.*
 import com.group12.server.entity.Activation
+import com.group12.server.entity.RoleEntity
 import com.group12.server.entity.User
 import com.group12.server.entity.toDTO
 import com.group12.server.repository.ActivationRepository
+import com.group12.server.repository.RoleRepository
 import com.group12.server.repository.UserRepository
 import com.group12.server.security.Role
 import com.group12.server.service.UserService
@@ -31,6 +33,8 @@ class UserServiceImpl: UserService {
     lateinit var userRepository: UserRepository
     @Autowired
     lateinit var activationRepository: ActivationRepository
+    @Autowired
+    lateinit var roleRepository : RoleRepository
     @Value("\${token.duration.hours}")
     var tokenDurationHours: Int? = null
 
@@ -90,7 +94,7 @@ class UserServiceImpl: UserService {
 
     override fun userReg(newUser: RegistrationDTO): ActivationDTO {
         val password = passwordEncoder.encode(newUser.password)
-        val tempUser = User(newUser.email, newUser.nickname, password, false,Role.CUSTOMER)
+        val tempUser = User(newUser.email, newUser.nickname, password, false)
         val savedUser = userRepository.save(tempUser)
         val activationCode = newActivationCode()
         val tempActivation = Activation(savedUser, newUser.email, activationCode)
@@ -122,9 +126,18 @@ class UserServiceImpl: UserService {
             }
             return null
         }
-        val user = activation.user
+        var user = activation.user
         user.validated = true
-        userRepository.save(user)
+        //create roles
+        if(!roleRepository.existsByRole(Role.CUSTOMER))
+        {
+            roleRepository.save(RoleEntity(mutableSetOf<User>(),Role.CUSTOMER))
+        }
+        var role = roleRepository.findByRole(Role.CUSTOMER)
+        user.roles.add(role!!)
+        role!!.users.add(user)
+        role=roleRepository.save(role)
+        user=userRepository.save(user)
         activationRepository.deleteById(UUID.fromString(token.provisional_id))
         return user.toDTO()
     }
@@ -135,7 +148,8 @@ class UserServiceImpl: UserService {
             val now = Calendar.getInstance()
             val exp = Calendar.getInstance()
             exp.add(Calendar.HOUR, tokenDurationHours!!)
-            val claims = mapOf<String,Any>("sub" to user.nickname, "exp" to exp.time, "iat" to now.time, "roles" to listOf(user.role))
+            println(user.roles)
+            val claims = mapOf<String,Any>("sub" to user.nickname, "exp" to exp.time, "iat" to now.time, "roles" to user.roles!!.map { it.role }.toList())
             return Jwts.builder().setClaims(claims).signWith(secretKey).compact()
         }
         return null

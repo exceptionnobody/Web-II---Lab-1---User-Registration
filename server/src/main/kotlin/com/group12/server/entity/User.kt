@@ -15,8 +15,8 @@ class User(
     var password: String,
     @Column(nullable = false)
     var validated: Boolean = false,
-    @Column(nullable = false)
-    var role : Role,
+    @ManyToMany
+    var roles : MutableSet<RoleEntity> = mutableSetOf<RoleEntity>(),
 ) {
     @Id
     @Column
