@@ -1,10 +1,9 @@
 package com.group12.server
 
-import com.group12.server.dto.ActivationDTO
-import com.group12.server.dto.RegistrationDTO
-import com.group12.server.dto.TokenDTO
-import com.group12.server.dto.UserDTO
+import com.group12.server.dto.*
+import com.group12.server.entity.User
 import com.group12.server.repository.ActivationRepository
+import com.group12.server.repository.RoleRepository
 import com.group12.server.repository.UserRepository
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -49,29 +48,33 @@ class IntegrationTests {
     lateinit var userRepository: UserRepository
     @Autowired
     lateinit var activationRepository: ActivationRepository
+    @Autowired
+    lateinit var roleRepository: RoleRepository
 
     @Test
     fun registerUserTest() {
+        Thread.sleep(1000)
         val baseUrl = "http://localhost:$port"
 
         // sends a request with a weak password
         val wrongReq = HttpEntity(RegistrationDTO("somename", "1234","me@email.com"))
-        val wrongRes = restTemplate.postForEntity<ActivationDTO>("$baseUrl/user/register", wrongReq)
+        val wrongRes = restTemplate.postForEntity<Unit>("$baseUrl/user/register", wrongReq)
         assert(wrongRes.statusCode == HttpStatus.BAD_REQUEST)
 
         // sends a request with a wrong email
-        val wrongReq1 = HttpEntity(RegistrationDTO("somename", "1234","meemail"))
-        val wrongRes1 = restTemplate.postForEntity<ActivationDTO>("$baseUrl/user/register", wrongReq1)
+        val wrongReq1 = HttpEntity(RegistrationDTO("somename", "Secret!Password1","meemail"))
+        val wrongRes1 = restTemplate.postForEntity<Unit>("$baseUrl/user/register", wrongReq1)
         assert(wrongRes1.statusCode == HttpStatus.BAD_REQUEST)
 
         // sends a request with a empty nickname
-        val wrongReq2 = HttpEntity(RegistrationDTO("", "1234","meemail"))
-        val wrongRes2 = restTemplate.postForEntity<ActivationDTO>("$baseUrl/user/register", wrongReq2)
+        val wrongReq2 = HttpEntity(RegistrationDTO("", "Secret!Password1","me@email.com"))
+        val wrongRes2 = restTemplate.postForEntity<Unit>("$baseUrl/user/register", wrongReq2)
         assert(wrongRes2.statusCode == HttpStatus.BAD_REQUEST)
 
         // sends a request with a strong password
         val rightReq = HttpEntity(RegistrationDTO("somename", "Secret!Password1","me@email.com"))
         val rightRes = restTemplate.postForEntity<ActivationDTO>("$baseUrl/user/register", rightReq)
+        println(rightRes.statusCode)
         assert(rightRes.statusCode == HttpStatus.ACCEPTED)
 
         // deletes created records from the db
@@ -83,11 +86,12 @@ class IntegrationTests {
 
     @Test
     fun activateUserTest() {
+        Thread.sleep(1000)
         val baseUrl = "http://localhost:$port"
 
         // sends a request with wrong provisional id and activation code
         val wrongReq = HttpEntity(TokenDTO("1234", "1234"))
-        val wrongRes = restTemplate.postForEntity<UserDTO>("$baseUrl/user/validate", wrongReq)
+        val wrongRes = restTemplate.postForEntity<Unit>("$baseUrl/user/validate", wrongReq)
         assert(wrongRes.statusCode == HttpStatus.NOT_FOUND)
 
         // registers a user in the db
@@ -102,11 +106,18 @@ class IntegrationTests {
         assert(rightRes.statusCode == HttpStatus.CREATED)
 
         // deletes the one remaining record from the db
+        val user  = userRepository.findById(rightRes.body!!.userId).get()
+        val roles = roleRepository.findAll()
+        roles.forEach {roleEntity ->  user.roles.remove(roleEntity)}
+        roles.forEach {roleEntity ->  roleEntity.users.remove(user)}
+        userRepository.save(user);
+        roleRepository.saveAll(roles)
         userRepository.deleteById(rightRes.body!!.userId)
     }
 
     @Test
     fun rateLimiterTests() {
+        Thread.sleep(1000)
         val baseUrl = "http://localhost:$port"
         val countWrong = AtomicInteger()
         val count  = AtomicInteger()
@@ -127,5 +138,31 @@ class IntegrationTests {
         tl.forEach { it.join() }
         assert(count.get()==10)
         assert(countWrong.get()==6)
+
+    }
+
+    @Test
+    fun loginTests() {
+        Thread.sleep(1000)
+        val baseUrl = "http://localhost:$port"
+
+        val registerReq = HttpEntity(RegistrationDTO("somename2", "Secret!Password12","me2@email.com"))
+        val registerRes = restTemplate.postForEntity<ActivationDTO>("$baseUrl/user/register", registerReq)
+        assert(registerRes.statusCode == HttpStatus.ACCEPTED)
+
+        // sends a request with correct provisional id and activation code
+        val activationCode = activationRepository.findById(registerRes.body!!.provisional_id).get().activationCode
+        val rightReq = HttpEntity(TokenDTO(registerRes.body!!.provisional_id.toString(), activationCode))
+        val rightRes = restTemplate.postForEntity<UserDTO>("$baseUrl/user/validate", rightReq)
+        assert(rightRes.statusCode == HttpStatus.CREATED)
+
+        val loginReq = HttpEntity(LoginDTO("somename2", "Secret!Password12"))
+        val loginRes =  restTemplate.postForEntity<String>("$baseUrl/user/login", loginReq)
+        assert(loginRes.statusCode == HttpStatus.OK)
+        assert(loginRes.body is String)
+
+        val loginReq2 = HttpEntity(LoginDTO("somename2", "Secret!Password11111"))
+        val loginRes2 =  restTemplate.postForEntity<String>("$baseUrl/user/login", loginReq2)
+        assert(loginRes2.statusCode == HttpStatus.BAD_REQUEST)
     }
 }

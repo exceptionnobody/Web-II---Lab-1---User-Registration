@@ -3,8 +3,10 @@ package com.group12.server
 import com.group12.server.dto.LoginDTO
 import com.group12.server.dto.RegistrationDTO
 import com.group12.server.dto.TokenDTO
+import com.group12.server.entity.RoleEntity
 import com.group12.server.entity.User
 import com.group12.server.repository.ActivationRepository
+import com.group12.server.repository.RoleRepository
 import com.group12.server.repository.UserRepository
 import com.group12.server.security.Role
 import com.group12.server.service.impl.EmailServiceImpl
@@ -15,6 +17,7 @@ import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase
 import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
 import org.springframework.test.context.DynamicPropertyRegistry
 import org.springframework.test.context.DynamicPropertySource
 import org.testcontainers.containers.PostgreSQLContainer
@@ -51,6 +54,11 @@ class ServiceUnitTests {
     lateinit var emailService: EmailServiceImpl
     @Autowired
     lateinit var secretKey: SecretKey
+    @Autowired
+    lateinit var roleRepository: RoleRepository
+    @Autowired
+    lateinit var bCryptPasswordEncoder: BCryptPasswordEncoder
+
 
     @Test
     fun isValidPwdTest() {
@@ -66,13 +74,27 @@ class ServiceUnitTests {
         Assertions.assertFalse(userService.isValidPwd(missingNotAlphanumCharPwd))
         val goodPwd = "Secret!Password1"
         Assertions.assertTrue(userService.isValidPwd(goodPwd))
+        // deletes registration from the db
+        val users  = userRepository.findAll()
+        val roles = roleRepository.findAll()
+        for (u in users){
+            u.roles.removeAll(roles)
+        }
+        for (r in roles)
+        {
+            r.users.removeAll(users)
+        }
+        userRepository.saveAll(users)
+        roleRepository.saveAll(roles)
+        userRepository.deleteAll()
+        roleRepository.deleteAll()
     }
 
     @Test
     fun isValidEmailAndNicknameTest() {
         // checks that nickname and email are not yet present in the db
-        val email = "me@email.com"
-        val nickname = "somename"
+        val email = "1@email.com"
+        val nickname = "somename1"
         Assertions.assertTrue(userService.isValidEmail(email))
         Assertions.assertTrue(userService.isValidNickname(nickname))
 
@@ -88,30 +110,87 @@ class ServiceUnitTests {
         val userId = activationRepository.findById(res.provisional_id).get().user.userId
         activationRepository.deleteById(res.provisional_id)
         userRepository.deleteById(userId!!)
+        // deletes registration from the db
+        val users  = userRepository.findAll()
+        val roles = roleRepository.findAll()
+        for (u in users){
+            u.roles.removeAll(roles)
+        }
+        for (r in roles)
+        {
+            r.users.removeAll(users)
+        }
+        userRepository.saveAll(users)
+        roleRepository.saveAll(roles)
+        userRepository.deleteAll()
+        roleRepository.deleteAll()
     }
 
     @Test
     fun isValidProvisionalIdTest() {
         Assertions.assertTrue(userService.isValidProvisionalId("eda6bff4-cc1e-46be-80fe-b5a59fcc75e3"))
         Assertions.assertFalse(userService.isValidProvisionalId("abcdef"))
+        // deletes registration from the db
+        val users  = userRepository.findAll()
+        val roles = roleRepository.findAll()
+        for (u in users){
+            u.roles.removeAll(roles)
+        }
+        for (r in roles)
+        {
+            r.users.removeAll(users)
+        }
+        userRepository.saveAll(users)
+        roleRepository.saveAll(roles)
+        userRepository.deleteAll()
+        roleRepository.deleteAll()
     }
 
     @Test
     fun isValidActivationCodeTest() {
         Assertions.assertTrue(userService.isValidActivationCode("123456"))
         Assertions.assertFalse(userService.isValidActivationCode("abcdef"))
+        // deletes registration from the db
+        val users  = userRepository.findAll()
+        val roles = roleRepository.findAll()
+        for (u in users){
+            u.roles.removeAll(roles)
+        }
+        for (r in roles)
+        {
+            r.users.removeAll(users)
+        }
+        userRepository.saveAll(users)
+        roleRepository.saveAll(roles)
+        userRepository.deleteAll()
+        roleRepository.deleteAll()
     }
 
     @Test
     fun newActivationCodeTest() {
         Assertions.assertEquals(6, userService.newActivationCode().length)
+        // deletes registration from the db
+        val users  = userRepository.findAll()
+        val roles = roleRepository.findAll()
+        for (u in users){
+            u.roles.removeAll(roles)
+        }
+        for (r in roles)
+        {
+            r.users.removeAll(users)
+        }
+        userRepository.saveAll(users)
+        roleRepository.saveAll(roles)
+        userRepository.deleteAll()
+        roleRepository.deleteAll()
+        roleRepository.deleteAll()
     }
 
     @Test
     fun userRegTest() {
         // checks that the registration is not yet present in the db
-        val email = "me@email.com"
-        val nickname = "somename"
+        val email = "me2@email.com"
+        val nickname = "somename2"
         val password = "Secret!Password1"
         Assertions.assertFalse(userRepository.existsByEmail(email))
         Assertions.assertFalse(userRepository.existsByNickname(nickname))
@@ -129,27 +208,55 @@ class ServiceUnitTests {
         val userId = activationRepository.findById(act.provisional_id).get().user.userId
         activationRepository.deleteById(act.provisional_id)
         userRepository.deleteById(userId!!)
+        val users  = userRepository.findAll()
+        val roles = roleRepository.findAll()
+        for (u in users){
+            u.roles.removeAll(roles)
+        }
+        for (r in roles)
+        {
+            r.users.removeAll(users)
+        }
+        userRepository.saveAll(users)
+        roleRepository.saveAll(roles)
+        userRepository.deleteAll()
+        roleRepository.deleteAll()
     }
 
     @Test
     fun completedRegCorrectActivationCodeTest() {
         // Registers a user in the db
-        val email = "me@email.com"
-        val nickname = "somename"
-        val password = "Secret!Password1"
+        val email = "test@email.com"
+        val nickname = "test"
+        val password = "Secret!Password3"
         val reg = RegistrationDTO(nickname, password, email)
         val act = userService.userReg(reg)
-
+        println("REG DONE")
         // Submits the right activation code
         val activationCode = activationRepository.findById(act.provisional_id).get().activationCode
+        println("ACT DONE")
         val tok = TokenDTO(act.provisional_id.toString(), activationCode)
         val res = userService.completedReg(tok)
+        println("ACT DONE")
         Assertions.assertNotNull(res)
         Assertions.assertTrue(activationRepository.findById(act.provisional_id).isEmpty)
         Assertions.assertTrue(userRepository.findById(res!!.userId).get().validated)
-
         // deletes registration from the db
-        userRepository.deleteById(res.userId)
+        val users  = userRepository.findAll()
+        val roles = roleRepository.findAll()
+        for (user in users){
+           user.roles.removeAll(roles)
+        }
+        for (role in roles)
+        {
+            role.users.removeAll(users)
+        }
+        userRepository.saveAll(users)
+        roleRepository.saveAll(roles)
+        userRepository.deleteAll()
+        roleRepository.deleteAll()
+
+
     }
 
     @Test
@@ -158,13 +265,27 @@ class ServiceUnitTests {
         val tok = TokenDTO("eda6bff4-cc1e-46be-80fe-b5a59fcc75e3", "123456")
         val res = userService.completedReg(tok)
         Assertions.assertNull(res)
+        // deletes registration from the db
+        val users  = userRepository.findAll()
+        val roles = roleRepository.findAll()
+        for (u in users){
+            u.roles.removeAll(roles)
+        }
+        for (r in roles)
+        {
+            r.users.removeAll(users)
+        }
+        userRepository.saveAll(users)
+        roleRepository.saveAll(roles)
+        userRepository.deleteAll()
+        roleRepository.deleteAll()
     }
 
     @Test
     fun completedRegExpiredActivationCodeTest() {
         // Registers a user in the db
-        val email = "me@email.com"
-        val nickname = "somename"
+        val email = "me4@email.com"
+        val nickname = "somename4"
         val password = "Secret!Password1"
         val reg = RegistrationDTO(nickname, password, email)
         val act = userService.userReg(reg)
@@ -181,13 +302,27 @@ class ServiceUnitTests {
         Assertions.assertNull(res)
         Assertions.assertTrue(activationRepository.findById(act.provisional_id).isEmpty)
         Assertions.assertFalse(userRepository.existsByEmail(act.email))
+        // deletes registration from the db
+        val users  = userRepository.findAll()
+        val roles = roleRepository.findAll()
+        for (u in users){
+            u.roles.removeAll(roles)
+        }
+        for (r in roles)
+        {
+            r.users.removeAll(users)
+        }
+        userRepository.saveAll(users)
+        roleRepository.saveAll(roles)
+        userRepository.deleteAll()
+        roleRepository.deleteAll()
     }
 
     @Test
     fun completedRegWrongActivationCodeTest() {
         // Registers a user in the db
-        val email = "me@email.com"
-        val nickname = "somename"
+        val email = "me5@email.com"
+        val nickname = "somename5"
         val password = "Secret!Password1"
         val reg = RegistrationDTO(nickname, password, email)
         val act = userService.userReg(reg)
@@ -205,15 +340,44 @@ class ServiceUnitTests {
         Assertions.assertNull(userService.completedReg(tok))
         Assertions.assertTrue(activationRepository.findById(act.provisional_id).isEmpty)
         Assertions.assertTrue(userRepository.findById(userId).isEmpty)
+        // deletes registration from the db
+        val users  = userRepository.findAll()
+        val roles = roleRepository.findAll()
+        for (u in users){
+            u.roles.removeAll(roles)
+        }
+        for (r in roles)
+        {
+            r.users.removeAll(users)
+        }
+        userRepository.saveAll(users)
+        roleRepository.saveAll(roles)
+        userRepository.deleteAll()
+        roleRepository.deleteAll()
     }
 
     @Test
     fun loginTest() {
+
         val email = "me@email.com"
         val nickname = "somename"
         val password = "Simple1Password!"
-        var user= User(email,nickname, password,true,Role.CUSTOMER)
+        val encodedpw = bCryptPasswordEncoder.encode(password)
+        var user= User(email,nickname, encodedpw,true)
         user= userRepository.save(user)
+        var role:RoleEntity
+        if (roleRepository.existsByRole(Role.CUSTOMER))
+        {
+            role=roleRepository.findByRole(Role.CUSTOMER)!!
+        }
+        else
+        {
+            role=roleRepository.save(RoleEntity(mutableSetOf(),Role.CUSTOMER))
+        }
+        role.users.add(user)
+        user.roles.add(role)
+        role=roleRepository.save(role)
+        user=userRepository.save(user)
         // sends email and checks its content
         val token = userService.login(nickname, password )
         assert(token!=null)
@@ -224,6 +388,19 @@ class ServiceUnitTests {
         assert(tokenNull==null)
         val tokenNull2 = userService.login("samename", password )
         assert(tokenNull2==null)
+        // deletes registration from the db
+        val users  = userRepository.findAll()
+        val roles = roleRepository.findAll()
+        for (u in users){
+            u.roles.removeAll(roles)
+        }
+        for (r in roles)
+        {
+            r.users.removeAll(users)
+        }
+        userRepository.saveAll(users)
+        roleRepository.saveAll(roles)
+        userRepository.deleteAll()
     }
 
     @Test
@@ -239,6 +416,19 @@ class ServiceUnitTests {
             Assertions.assertTrue(message.text!!.contains(activationCode))
             Assertions.assertTrue(message.text!!.contains(nickname))
         }
+        // deletes registration from the db
+        val users  = userRepository.findAll()
+        val roles = roleRepository.findAll()
+        for (u in users){
+            u.roles.removeAll(roles)
+        }
+        for (r in roles)
+        {
+            r.users.removeAll(users)
+        }
+        userRepository.saveAll(users)
+        roleRepository.saveAll(roles)
+        userRepository.deleteAll()
+        roleRepository.deleteAll()
     }
-
 }

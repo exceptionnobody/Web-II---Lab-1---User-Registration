@@ -16,6 +16,7 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
 import org.springframework.stereotype.Service
 import java.util.*
+import javax.annotation.PostConstruct
 import javax.crypto.SecretKey
 
 @Service
@@ -153,5 +154,30 @@ class UserServiceImpl: UserService {
             return Jwts.builder().setClaims(claims).signWith(secretKey).compact()
         }
         return null
+    }
+    @PostConstruct
+    fun createAdmin() {
+        if (!roleRepository.existsByRole(Role.CUSTOMER))
+        {
+            roleRepository.save(RoleEntity(mutableSetOf<User>(), Role.CUSTOMER))
+        }
+        if (!roleRepository.existsByRole(Role.ADMIN))
+        {
+            roleRepository.save(RoleEntity(mutableSetOf<User>(), Role.ADMIN))
+        }
+        if(!userRepository.existsByNickname("admin"))
+        {
+            var admin = User("admin@email.com","admin", passwordEncoder.encode("admin"),true)
+            var roleC = roleRepository.findByRole(Role.CUSTOMER)
+            var roleA = roleRepository.findByRole(Role.ADMIN)
+            admin=userRepository.save(admin)
+            admin.roles.add(roleC!!)
+            admin.roles.add(roleA!!)
+            roleC.users.add(admin)
+            roleA.users.add(admin)
+            roleA=roleRepository.save(roleA)
+            roleC=roleRepository.save(roleC)
+            admin=userRepository.save(admin)
+        }
     }
 }
