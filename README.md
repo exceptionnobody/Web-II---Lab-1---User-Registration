@@ -12,18 +12,9 @@ Repository for the Lab 3 assignment of the Web Applications II course at Polytec
 
 ## Usage
 
-In this ```lab-4``` you can find the implementaion of the Login Service required for the Lab 4.
+In this ```lab-4``` branch you can find the implementaion of the Login Service required for the Lab 4.
 
-1. Pull the official postgres image:
-```docker pull postgres```
-2. Create and run the Docker container:
-```docker run --name postgres -e POSTGRES_PASSWORD=postgres -d -p 54320:5432 -v Path\To\Project\Volume\Folder:/var/lib/postgres/data postgres```
-3. Start the server
-
-To stop the Docker container:
-```docker stop postgres```</br>
-To delete the Docker container:
-```docker rm postgres```
+You can follow the instruction in the ```wa1-g12-traveler-service``` to setup the Docker container and initialize the databases.
 
 In case you change the ```POSTGRES_PASSWORD``` value remember to change the ```spring.datasource.password``` field in ```applications.properties```
 
