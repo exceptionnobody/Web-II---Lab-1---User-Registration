@@ -12,17 +12,8 @@ Repository for the Lab 3 assignment of the Web Applications II course at Polytec
 
 ## Usage
 
-1. Pull the official postgres image:
-```docker pull postgres```
-2. Create and run the Docker container:
-```docker run --name postgres -e POSTGRES_PASSWORD=postgres -d -p 54320:5432 -v Path\To\Project\Volume\Folder:/var/lib/postgres/data postgres```
-3. Start the server
-
-To stop the Docker container:
-```docker stop postgres```</br>
-To delete the Docker container:
-```docker rm postgres```
-
+The Login service can be found in this repository on the branch ```lab-4```:
+- ```git checkout lab-4```
 
 In case you change the ```POSTGRES_PASSWORD``` value remember to change the ```spring.datasource.password``` field in ```applications.properties```
 
