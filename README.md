@@ -12,6 +12,8 @@ Repository for the Lab 3 assignment of the Web Applications II course at Polytec
 
 ## Usage
 
+In this ```lab-4``` you can find the implementaion of the Login Service required for the Lab 4.
+
 1. Pull the official postgres image:
 ```docker pull postgres```
 2. Create and run the Docker container:
@@ -23,10 +25,14 @@ To stop the Docker container:
 To delete the Docker container:
 ```docker rm postgres```
 
-
 In case you change the ```POSTGRES_PASSWORD``` value remember to change the ```spring.datasource.password``` field in ```applications.properties```
 
 The prune expired data job is executed every 1 minute.
 To change that modify in ```application.properties``` the fields:
 1. ```job.execution.rate```
 2. ```job.initial.delay```
+
+When started, the login service automatically inserts a user of role ADMIN with the following credentsials:
+- Username: ```admin```
+- Email: ```admin@email.com```
+- Password: ```admin```

@@ -5,6 +5,7 @@ import com.group12.server.entity.User
 import com.group12.server.repository.ActivationRepository
 import com.group12.server.repository.RoleRepository
 import com.group12.server.repository.UserRepository
+import org.junit.jupiter.api.Order
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase
@@ -53,7 +54,6 @@ class IntegrationTests {
 
     @Test
     fun registerUserTest() {
-        Thread.sleep(1000)
         val baseUrl = "http://localhost:$port"
 
         // sends a request with a weak password
@@ -86,7 +86,6 @@ class IntegrationTests {
 
     @Test
     fun activateUserTest() {
-        Thread.sleep(1000)
         val baseUrl = "http://localhost:$port"
 
         // sends a request with wrong provisional id and activation code
@@ -116,34 +115,7 @@ class IntegrationTests {
     }
 
     @Test
-    fun rateLimiterTests() {
-        Thread.sleep(1000)
-        val baseUrl = "http://localhost:$port"
-        val countWrong = AtomicInteger()
-        val count  = AtomicInteger()
-
-        // tests wrong requests because are faster
-        val wrongReq = HttpEntity(RegistrationDTO("somename", "1234","me@email.com"))
-        val tl = mutableListOf<Thread>()
-        for(i in 1..16) {
-            tl.add(Thread{
-                val wrongRes = restTemplate.postForEntity<Unit>("$baseUrl/user/register", wrongReq)
-                if(wrongRes.statusCode == HttpStatus.TOO_MANY_REQUESTS)
-                    countWrong.incrementAndGet()
-                else
-                    count.incrementAndGet()
-            })
-        }
-        tl.forEach { it.start() }
-        tl.forEach { it.join() }
-        assert(count.get()==10)
-        assert(countWrong.get()==6)
-
-    }
-
-    @Test
     fun loginTests() {
-        Thread.sleep(1000)
         val baseUrl = "http://localhost:$port"
 
         val registerReq = HttpEntity(RegistrationDTO("somename2", "Secret!Password12","me2@email.com"))
